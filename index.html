@@ -1,0 +1,1218 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AUREUS PHI</title>
+
+  <meta name="referrer" content="no-referrer" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()" />
+  <meta name="color-scheme" content="dark" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;200;300&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#000;
+      --fg:rgba(255,255,255,.94);
+      --muted:rgba(255,255,255,.62);
+      --px:clamp(16px, 2vw, 26px);
+      --py:clamp(10px, 1.4vh, 16px);
+      --brand-size:clamp(13px, 1vw, 15px);
+      --brand-track:.56em;
+      --nav-size:clamp(10px, .8vw, 11px);
+      --nav-track:.30em;
+      --copy-size:clamp(6px, .62vw, 8px);
+      --copy-track:.08em;
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    html,body{ width:100%; height:100%; }
+
+    body{
+      background:
+        radial-gradient(circle at 50% 46%, rgba(201,168,76,.045), transparent 22%),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,.018), transparent 58%),
+        #000;
+      color:var(--fg);
+      font-family:'Josefin Sans', ui-sans-serif, system-ui, sans-serif;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:geometricPrecision;
+      overflow:hidden;
+      transition: opacity 0.18s ease-in-out;
+    }
+
+    body.is-i18n-switching{ opacity:.92; }
+
+    .page{
+      width:100%;
+      height:100%;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+    }
+
+    header, footer{
+      background:transparent;
+      backdrop-filter:none;
+      -webkit-backdrop-filter:none;
+    }
+
+    header{
+      padding:var(--py) var(--px);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      mix-blend-mode:difference;
+    }
+
+    .brand{
+      font-weight:200;
+      font-size:var(--brand-size);
+      letter-spacing:var(--brand-track);
+      text-transform:uppercase;
+      line-height:1;
+      color:rgba(255,255,255,.86);
+      white-space:nowrap;
+      padding-right:var(--brand-track);
+      flex:0 0 auto;
+    }
+
+    .right-controls{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:16px;
+      flex:0 0 auto;
+    }
+
+    .navlink{
+      color:rgba(255,255,255,.68);
+      text-decoration:none;
+      font-size:var(--nav-size);
+      font-weight:200;
+      letter-spacing:var(--nav-track);
+      text-transform:uppercase;
+      line-height:1;
+      position:relative;
+      padding-right:var(--nav-track);
+      transition:color .18s ease;
+      white-space:nowrap;
+    }
+
+    .navlink:hover{ color:rgba(255,255,255,.95); }
+
+    .navlink::after{
+      content:"";
+      position:absolute;
+      left:0; right:0; bottom:-5px;
+      height:1px;
+      background:rgba(255,255,255,.20);
+      transform:scaleX(0);
+      transform-origin:left;
+      transition:transform .16s ease;
+    }
+
+    .navlink:hover::after{ transform:scaleX(1); }
+
+    .lang-switch{
+      position:relative;
+      display:flex;
+      align-items:center;
+      flex:0 0 auto;
+    }
+
+    .lang-trigger{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:28px;
+      height:28px;
+      background:none;
+      border:0;
+      cursor:pointer;
+      padding:0;
+      color:#fff;
+      line-height:1;
+      border-radius:10px;
+      -webkit-user-select:none;
+      user-select:none;
+    }
+
+    .lang-trigger:hover{ background: rgba(255,255,255,.06); }
+    .lang-trigger:focus{ outline:none; }
+
+    .globe{ width:18px; height:18px; display:block; }
+
+    .lang-rail{
+      --rail-shift: 0px;
+      position:absolute;
+      right: calc(100% + 10px);
+      top: 50%;
+      transform: translateY(-50%) translateX(var(--rail-shift));
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 8px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.86);
+      border-radius: 999px;
+      max-width: min(780px, calc(100vw - (2 * var(--px)) - 80px));
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      direction:ltr;
+      unicode-bidi:isolate;
+      opacity:0;
+      pointer-events:none;
+      filter: drop-shadow(0 10px 24px rgba(0,0,0,.45));
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: opacity 0.4s ease, transform 0.2s ease;
+      touch-action: pan-x;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      z-index:20;
+    }
+
+    .lang-rail::-webkit-scrollbar{ height:0; }
+    .lang-rail{ scrollbar-width:none; -ms-overflow-style:none; }
+
+    .lang-switch.is-open .lang-rail{
+      opacity:1;
+      pointer-events:auto;
+    }
+
+    .lang-switch.open-right .lang-rail{
+      right:auto;
+      left: calc(100% + 10px);
+    }
+
+    [dir="rtl"] .lang-switch.open-right .lang-rail{
+      left:auto;
+      right: calc(100% + 10px);
+    }
+
+    .lang-pill{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.30);
+      color: rgba(255,255,255,.86);
+      height:26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      cursor:pointer;
+      user-select:none;
+      transform: translateX(10px);
+      opacity: 0;
+      transition: transform 220ms ease, opacity 220ms ease, background 160ms ease, border-color 160ms ease, color 160ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .lang-pill:focus{ outline:none; }
+    .lang-pill[hidden]{ display:none !important; }
+
+    .lang-switch.is-open .lang-pill{
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    .lang-switch.is-open .lang-pill:nth-child(1)  { transition-delay:  0ms; }
+    .lang-switch.is-open .lang-pill:nth-child(2)  { transition-delay: 18ms; }
+    .lang-switch.is-open .lang-pill:nth-child(3)  { transition-delay: 36ms; }
+    .lang-switch.is-open .lang-pill:nth-child(4)  { transition-delay: 54ms; }
+    .lang-switch.is-open .lang-pill:nth-child(5)  { transition-delay: 72ms; }
+    .lang-switch.is-open .lang-pill:nth-child(6)  { transition-delay: 90ms; }
+    .lang-switch.is-open .lang-pill:nth-child(7)  { transition-delay:108ms; }
+    .lang-switch.is-open .lang-pill:nth-child(8)  { transition-delay:126ms; }
+    .lang-switch.is-open .lang-pill:nth-child(9)  { transition-delay:144ms; }
+
+    .lang-pill:hover{
+      color:#fff;
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.06);
+    }
+
+    .lang-pill::after{
+      content: attr(data-label);
+      position:absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.90);
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 10px;
+      padding: 6px 8px;
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.92);
+      opacity:0;
+      pointer-events:none;
+      white-space: nowrap;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .lang-pill:hover::after{ opacity:1; }
+
+    main{
+      position:relative;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    .stage{
+      position:relative;
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding:clamp(8px, 2vh, 20px);
+    }
+
+    .canvas-wrap{
+      position:relative;
+      width:min(78vw, 78vh, 860px);
+      height:min(78vw, 78vh, 860px);
+      min-width:280px;
+      min-height:280px;
+    }
+
+    .canvas-wrap::before{
+      content:"";
+      position:absolute;
+      inset:-18%;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(201,168,76,.05), transparent 58%);
+      filter:blur(24px);
+      pointer-events:none;
+    }
+
+    canvas{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    footer{
+      padding:10px var(--px) 14px;
+    }
+
+    .footer-inner{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      mix-blend-mode:difference;
+      transform: translateZ(0);
+    }
+
+    .footer-links{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+      flex-wrap:wrap;
+      opacity:.78;
+    }
+
+    .footer-links a{
+      color:#fff;
+      text-decoration:none;
+      font-size:clamp(8px,.76vw,10px);
+      font-weight:200;
+      letter-spacing:.28em;
+      text-transform:uppercase;
+      padding-right:.28em;
+    }
+
+    .footer-links a:hover{ color:#fff; }
+
+    .footer-links .sep{
+      width:1px;
+      height:8px;
+      background:rgba(255,255,255,.14);
+      flex-shrink:0;
+    }
+
+    .copyright{
+      font-size:var(--copy-size);
+      font-weight:100;
+      letter-spacing:var(--copy-track);
+      color:rgba(255,255,255,.22);
+      text-align:center;
+      line-height:1.3;
+      text-transform:uppercase;
+    }
+
+    .copyright-link{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    [data-i18n]{
+      display:inline-block;
+      transition: opacity 160ms ease, transform 160ms ease, filter 160ms ease;
+      will-change: opacity, transform, filter;
+    }
+
+    [data-i18n].mx-i18n-out{
+      opacity:0;
+      transform: translateY(2px);
+      filter: blur(1px);
+    }
+
+    [data-i18n].mx-i18n-in{
+      opacity:1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+
+    [dir="rtl"] .topbar{ flex-direction:row-reverse; }
+    [dir="rtl"] .right-controls{ margin-left:0; margin-right:auto; flex-direction:row-reverse; }
+    [dir="rtl"] .navlink::after{ transform-origin:right; }
+    [dir="rtl"] .footer-links{ flex-direction:row-reverse; }
+
+    @media (max-width: 720px){
+      .topbar{
+        align-items:flex-start;
+      }
+
+      .right-controls{
+        gap:12px;
+      }
+
+      .canvas-wrap{
+        width:min(86vw, 70vh, 760px);
+        height:min(86vw, 70vh, 760px);
+        min-width:240px;
+        min-height:240px;
+      }
+
+      .lang-rail{
+        right:0;
+        left:auto;
+        top:calc(100% + 10px);
+        transform: translateX(var(--rail-shift));
+        max-width: min(92vw, 520px);
+      }
+
+      [dir="rtl"] .lang-rail{
+        left:0;
+        right:auto;
+      }
+    }
+
+    @media (max-width: 560px){
+      .footer-links .sep{ display:none; }
+
+      .brand{
+        font-size:clamp(11px, 3vw, 13px);
+      }
+
+      .navlink{
+        font-size:10px;
+      }
+
+      .canvas-wrap{
+        width:min(90vw, 62vh, 680px);
+        height:min(90vw, 62vh, 680px);
+        min-width:220px;
+        min-height:220px;
+      }
+    }
+
+    html[dir="rtl"], body{ overflow-x: hidden; }
+    [dir="rtl"] .page{ overflow-x: clip; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="topbar">
+        <div class="brand">Aureus Phi</div>
+
+        <div class="right-controls">
+          <div class="lang-switch" id="lang-switch">
+            <button class="lang-trigger" aria-label="Language selector" type="button">
+              <svg class="globe" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/>
+                <path d="M3 12h18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M12 3c3 3 3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M12 3c-3 3-3 15 0 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </button>
+
+            <div class="lang-rail" id="lang-rail" aria-label="Languages">
+              <button class="lang-pill" data-lang="en" data-label="English" type="button">EN</button>
+              <button class="lang-pill" data-lang="es" data-label="Español" type="button">ES</button>
+              <button class="lang-pill" data-lang="ca" data-label="Català" type="button">CA</button>
+              <button class="lang-pill" data-lang="eu" data-label="Euskara" type="button">EU</button>
+              <button class="lang-pill" data-lang="zh" data-label="中文 (Chinese)" type="button">ZH</button>
+              <button class="lang-pill" data-lang="hi" data-label="हिंदी (Hindi)" type="button">HI</button>
+              <button class="lang-pill" data-lang="ar" data-label="العربية (Arabic)" type="button">AR</button>
+              <button class="lang-pill" data-lang="ru" data-label="Русский" type="button">RU</button>
+              <button class="lang-pill" data-lang="fr" data-label="Français" type="button">FR</button>
+            </div>
+          </div>
+
+          <a class="navlink" href="mailto:hello@aureusphi.com" data-i18n="nav.contact">Contact</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="stage">
+        <div class="canvas-wrap" id="wrap">
+          <canvas id="bg"></canvas>
+          <canvas id="fg"></canvas>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <div class="footer-links">
+          <a href="https://www.microretailx.com" target="_blank" rel="noopener noreferrer" data-i18n="footer.terms">Terms</a>
+          <div class="sep"></div>
+          <a href="https://www.microretailx.com" target="_blank" rel="noopener noreferrer" data-i18n="footer.privacy">Privacy</a>
+          <div class="sep"></div>
+          <a href="https://www.microretailx.com" target="_blank" rel="noopener noreferrer" data-i18n="footer.cookies">Cookies</a>
+          <div class="sep"></div>
+          <a href="https://www.microretailx.com" target="_blank" rel="noopener noreferrer" data-i18n="footer.legal">Legal</a>
+        </div>
+
+        <div class="copyright">
+          <a class="copyright-link" href="https://www.microretailx.com" target="_blank" rel="noopener noreferrer">
+            © 2026 MICRORETAILX LLC
+          </a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (function(){
+      const bgCv=document.getElementById('bg');
+      const fgCv=document.getElementById('fg');
+      const bgCtx=bgCv.getContext('2d');
+      const ctx=fgCv.getContext('2d');
+      const wrap=document.getElementById('wrap');
+
+      const PHI=1.6180339887;
+      const G=a=>`rgba(201,168,76,${a})`;
+      const ei=t=>t<.5?2*t*t:-1+(4-2*t)*t;
+      const eo=t=>1-Math.pow(1-t,3);
+      const pc=(e,a,b)=>Math.max(0,Math.min(1,(e-a)/(b-a)));
+
+      let W=560,H=560,dpr=1;
+      let flat=[], lens=[], totLen=0, spiralLen=0, squares=[];
+
+      function rebuildGeometry(){
+        const PAD=W*0.0715;
+        const RW=W-2*PAD;
+        const RH=RW/PHI;
+
+        let rx=PAD,ry=(H-RH)/2,rw=RW,rh=RH;
+        const rawArcs=[];
+
+        for(let i=0;i<8;i++){
+          const d=i%4;let sq,ax,ay,sa;
+          if(d===0){sq=rh;ax=rx+sq;ay=ry+sq;sa=Math.PI;rx+=sq;rw-=sq;}
+          else if(d===1){sq=rw;ax=rx;ay=ry+sq;sa=-Math.PI/2;ry+=sq;rh-=sq;}
+          else if(d===2){sq=rh;ax=rx+rw-sq;ay=ry;sa=0;rw-=sq;}
+          else{sq=rw;ax=rx+rw;ay=ry+rh-sq;sa=Math.PI/2;rh-=sq;}
+          rawArcs.push({ax,ay,r:sq,sa});
+          if(rw<1||rh<1)break;
+        }
+
+        const PHI_IDX=4;
+        const rawPhi=rawArcs[PHI_IDX];
+        const TARGET_CR=W*0.1215;
+        const scale=TARGET_CR/rawPhi.r;
+
+        function tr(ax,ay){
+          return{x:(ax-rawPhi.ax)*scale+W/2,y:(ay-rawPhi.ay)*scale+H/2};
+        }
+
+        const arcs=rawArcs.map(({ax,ay,r,sa})=>{
+          const t=tr(ax,ay);
+          return{ax:t.x,ay:t.y,r:r*scale,sa};
+        });
+
+        const phiArc=arcs[PHI_IDX];
+        const CX=phiArc.ax,CY=phiArc.ay,CR=phiArc.r;
+
+        const spiralPts=[];
+        for(let i=0;i<=PHI_IDX;i++){
+          const {ax,ay,r,sa}=arcs[i];
+          const steps=Math.max(20,Math.floor(r/2));
+          for(let j=(i===0?0:1);j<=steps;j++){
+            const a=sa+(Math.PI/2)*(j/steps);
+            spiralPts.push({x:ax+r*Math.cos(a),y:ay+r*Math.sin(a)});
+          }
+        }
+
+        const circleStartA=phiArc.sa+Math.PI/2;
+        const circlePts=[];
+        for(let i=0;i<=240;i++){
+          const a=circleStartA+(Math.PI*2)*(i/240);
+          circlePts.push({x:CX+CR*Math.cos(a),y:CY+CR*Math.sin(a)});
+        }
+
+        const EXT=CR*0.7;
+        const stemPts=[];
+        for(let i=0;i<=80;i++){
+          stemPts.push({x:CX,y:(CY-CR-EXT)+(CR*2+EXT*2)*(i/80)});
+        }
+
+        flat=[];
+        [{pts:spiralPts,lift:false},{pts:circlePts,lift:false},{pts:stemPts,lift:true}]
+          .forEach(({pts,lift})=>pts.forEach((p,i)=>flat.push({x:p.x,y:p.y,lift:lift&&i===0})));
+
+        lens=[0];
+        for(let i=1;i<flat.length;i++){
+          const d=flat[i].lift?0:Math.hypot(flat[i].x-flat[i-1].x,flat[i].y-flat[i-1].y);
+          lens.push(lens[i-1]+d);
+        }
+        totLen=lens[lens.length-1];
+
+        spiralLen=0;
+        for(let i=1;i<spiralPts.length;i++){
+          spiralLen+=Math.hypot(
+            spiralPts[i].x-spiralPts[i-1].x,
+            spiralPts[i].y-spiralPts[i-1].y
+          );
+        }
+
+        squares=arcs.map(({ax,ay,r,sa})=>[
+          {x:ax,y:ay},
+          {x:ax+r*Math.cos(sa),y:ay+r*Math.sin(sa)},
+          {x:ax+r*Math.cos(sa)+r*Math.cos(sa+Math.PI/2),y:ay+r*Math.sin(sa)+r*Math.sin(sa+Math.PI/2)},
+          {x:ax+r*Math.cos(sa+Math.PI/2),y:ay+r*Math.sin(sa+Math.PI/2)}
+        ]);
+      }
+
+      function drawRects(al){
+        bgCtx.save();
+        bgCtx.globalAlpha=al;
+        bgCtx.lineWidth=Math.max(0.45, W*0.0009);
+        squares.forEach((corners,i)=>{
+          bgCtx.strokeStyle=G(Math.max(.03,.10-i*.011));
+          bgCtx.beginPath();
+          bgCtx.moveTo(corners[0].x,corners[0].y);
+          corners.forEach(c=>bgCtx.lineTo(c.x,c.y));
+          bgCtx.closePath();
+          bgCtx.stroke();
+        });
+        bgCtx.restore();
+      }
+
+      function drawAll(p,spiralAl,phiAl){
+        if(p<=0)return;
+
+        const target=totLen*p;
+        const sTarget=Math.min(target,spiralLen);
+        const phiOver=Math.max(0,target-spiralLen);
+
+        ctx.save();
+        ctx.lineCap='round';
+        ctx.lineJoin='round';
+
+        ctx.beginPath();
+        ctx.strokeStyle=G(spiralAl);
+        ctx.lineWidth=Math.max(1.05, W*0.00205);
+        let inp=false;
+        for(let i=0;i<flat.length;i++){
+          if(lens[i]>spiralLen)break;
+          if(lens[i]>sTarget){
+            if(!flat[i].lift&&i>0){
+              const t=(sTarget-lens[i-1])/(lens[i]-lens[i-1]||1);
+              ctx.lineTo(
+                flat[i-1].x+(flat[i].x-flat[i-1].x)*t,
+                flat[i-1].y+(flat[i].y-flat[i-1].y)*t
+              );
+            }
+            break;
+          }
+          if(flat[i].lift||!inp){ctx.moveTo(flat[i].x,flat[i].y);inp=true;}
+          else ctx.lineTo(flat[i].x,flat[i].y);
+        }
+        ctx.stroke();
+
+        if(phiOver>0){
+          ctx.beginPath();
+          ctx.strokeStyle=G(phiAl);
+          ctx.lineWidth=Math.max(1.55, W*0.00295);
+          inp=false;
+          for(let i=0;i<flat.length;i++){
+            const loc=lens[i]-spiralLen;
+            if(loc<0)continue;
+            if(loc>phiOver){
+              if(!flat[i].lift&&i>0){
+                const t=(phiOver-(lens[i-1]-spiralLen))/((lens[i]-lens[i-1])||1);
+                ctx.lineTo(
+                  flat[i-1].x+(flat[i].x-flat[i-1].x)*t,
+                  flat[i-1].y+(flat[i].y-flat[i-1].y)*t
+                );
+              }
+              break;
+            }
+            if(flat[i].lift||!inp){ctx.moveTo(flat[i].x,flat[i].y);inp=true;}
+            else ctx.lineTo(flat[i].x,flat[i].y);
+          }
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function resize(){
+        const rect=wrap.getBoundingClientRect();
+        dpr=Math.min(window.devicePixelRatio||1,2);
+
+        W=Math.max(220, Math.round(rect.width));
+        H=Math.max(220, Math.round(rect.height));
+
+        bgCv.width=Math.round(W*dpr);
+        bgCv.height=Math.round(H*dpr);
+        fgCv.width=Math.round(W*dpr);
+        fgCv.height=Math.round(H*dpr);
+
+        bgCv.style.width=W+'px';
+        bgCv.style.height=H+'px';
+        fgCv.style.width=W+'px';
+        fgCv.style.height=H+'px';
+
+        bgCtx.setTransform(1,0,0,1,0,0);
+        ctx.setTransform(1,0,0,1,0,0);
+        bgCtx.scale(dpr,dpr);
+        ctx.scale(dpr,dpr);
+
+        rebuildGeometry();
+      }
+
+      const TS={d0:400,d1:4400,fade0:3000,fade1:4000};
+      const TOTAL=4800;
+      let t0=null;
+      let rafId=null;
+
+      function frame(ts){
+        if(!t0)t0=ts;
+        const el=ts-t0;
+
+        const pD=ei(pc(el,TS.d0,TS.d1));
+        const pF=eo(pc(el,TS.fade0,TS.fade1));
+
+        bgCtx.clearRect(0,0,W,H);
+        drawRects(Math.max(0,1-pF));
+
+        ctx.clearRect(0,0,W,H);
+        drawAll(pD,Math.max(0,.85*(1-pF)),.95);
+
+        if(el<TOTAL){
+          rafId=requestAnimationFrame(frame);
+        }
+      }
+
+      function restart(){
+        if(rafId) cancelAnimationFrame(rafId);
+        t0=null;
+        rafId=requestAnimationFrame(frame);
+      }
+
+      let resizeTimer=null;
+      window.addEventListener('resize', ()=>{
+        clearTimeout(resizeTimer);
+        resizeTimer=setTimeout(()=>{
+          resize();
+          restart();
+        },120);
+      });
+
+      resize();
+      setTimeout(()=>restart(),400);
+    })();
+
+    (function(){
+      const I18N = {
+        en: {
+          "nav.contact": "Contact",
+          "footer.terms": "Terms",
+          "footer.privacy": "Privacy",
+          "footer.cookies": "Cookies",
+          "footer.legal": "Legal"
+        },
+
+        es: {
+          "nav.contact": "Contacto",
+          "footer.terms": "Términos",
+          "footer.privacy": "Privacidad",
+          "footer.cookies": "Cookies",
+          "footer.legal": "Legal"
+        },
+
+        ca: {
+          "nav.contact": "Contacte",
+          "footer.terms": "Termes",
+          "footer.privacy": "Privacitat",
+          "footer.cookies": "Cookies",
+          "footer.legal": "Legal"
+        },
+
+        eu: {
+          "nav.contact": "Kontaktua",
+          "footer.terms": "Baldintzak",
+          "footer.privacy": "Pribatutasuna",
+          "footer.cookies": "Cookieak",
+          "footer.legal": "Lege-oharra"
+        },
+
+        fr: {
+          "nav.contact": "Contact",
+          "footer.terms": "Conditions d’utilisation",
+          "footer.privacy": "Confidentialité",
+          "footer.cookies": "Cookies",
+          "footer.legal": "Mentions légales"
+        },
+
+        ru: {
+          "nav.contact": "Контакты",
+          "footer.terms": "Условия",
+          "footer.privacy": "Конфиденциальность",
+          "footer.cookies": "Файлы cookie",
+          "footer.legal": "Юридическая информация"
+        },
+
+        ar: {
+          "nav.contact": "تواصل",
+          "footer.terms": "الشروط",
+          "footer.privacy": "الخصوصية",
+          "footer.cookies": "ملفات تعريف الارتباط",
+          "footer.legal": "قانوني"
+        },
+
+        hi: {
+          "nav.contact": "संपर्क",
+          "footer.terms": "शर्तें",
+          "footer.privacy": "गोपनीयता",
+          "footer.cookies": "कुकीज़",
+          "footer.legal": "कानूनी"
+        },
+
+        zh: {
+          "nav.contact": "联系",
+          "footer.terms": "使用条款",
+          "footer.privacy": "隐私",
+          "footer.cookies": "Cookies",
+          "footer.legal": "法律声明"
+        }
+      };
+
+      const RTL_LANGS = new Set(["ar"]);
+      const DEFAULT_LANG = "en";
+      const storageKey = "ap_lang";
+
+      function detectBrowserLang(){
+        const supported = new Set(Object.keys(I18N));
+        const prefs = (Array.isArray(navigator.languages) && navigator.languages.length)
+          ? navigator.languages
+          : [navigator.language || navigator.userLanguage || DEFAULT_LANG];
+
+        for (const raw of prefs){
+          if (!raw) continue;
+          const base = String(raw).toLowerCase().slice(0,2);
+          if (supported.has(base)) return base;
+        }
+        return null;
+      }
+
+      function getLang(){
+        const saved = localStorage.getItem(storageKey);
+        if (saved && I18N[saved]) return saved;
+        const detected = detectBrowserLang();
+        if (detected) return detected;
+        return DEFAULT_LANG;
+      }
+
+      function setLang(lang){ localStorage.setItem(storageKey, lang); }
+
+      const POOL_LATIN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const POOL_CYR   = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ0123456789";
+      const POOL_DEV   = "अआइईउऊएऐओऔकखगघचछजझटठडढतथदधनपफबभमयरलवशषसह०१२३४५६७८९";
+      const POOL_CJK   = "的一是在不了有人这中大为上个国我以要他时来用们生到作地于出就分对成会可主发年动同工也能下过子说产种面而方后多定行学法所民得经";
+      const POOL_AR    = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي٠١٢٣٤٥٦٧٨٩";
+
+      function poolForLang(lang){
+        if (lang === "ru") return POOL_CYR;
+        if (lang === "hi") return POOL_DEV;
+        if (lang === "zh") return POOL_CJK;
+        if (lang === "ar") return POOL_AR;
+        return POOL_LATIN;
+      }
+
+      function scrambleSmart(el, finalText, durationMs, lang){
+        const base = String(finalText ?? "");
+        const pool = poolForLang(lang);
+        const isArabic = (lang === "ar");
+
+        const start = performance.now();
+        const tick = (t) => {
+          const p = Math.min(1, (t - start) / durationMs);
+          const reveal = Math.floor(p * base.length);
+
+          if (isArabic){
+            const shown = base.slice(0, reveal);
+            const hidden = base.slice(reveal).replace(/[^\s]/g, " ");
+            el.textContent = shown + hidden;
+            if (p < 1) requestAnimationFrame(tick);
+            else el.textContent = base;
+            return;
+          }
+
+          let out = "";
+          for (let i = 0; i < base.length; i++){
+            const c = base[i];
+            if (i < reveal) { out += c; continue; }
+            if (c === " ") { out += " "; continue; }
+            if (/[\.\,\!\?\:\;\-\—\–\(\)\[\]\/\&\+%#@€$£"']/.test(c)) { out += c; continue; }
+            out += pool[(Math.random() * pool.length) | 0];
+          }
+          el.textContent = out;
+
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = base;
+        };
+        requestAnimationFrame(tick);
+      }
+
+      function applyLang(lang){
+        document.body.classList.add("is-i18n-switching");
+
+        try{
+          const dict = I18N[lang] || I18N[DEFAULT_LANG];
+          const html = document.documentElement;
+          html.lang = lang;
+          html.dir = RTL_LANGS.has(lang) ? "rtl" : "ltr";
+
+          const switchEl = document.getElementById("lang-switch");
+          switchEl?.classList.remove("is-open");
+          switchEl?.classList.remove("open-right");
+
+          const railEl = document.getElementById("lang-rail");
+          if (railEl){
+            railEl.querySelectorAll(".lang-pill").forEach(btn => {
+              const l = btn.getAttribute("data-lang");
+              btn.hidden = (l === lang);
+            });
+            railEl.scrollLeft = 0;
+          }
+
+          const nodes = Array.from(document.querySelectorAll("[data-i18n]"));
+          nodes.forEach(el => el.classList.add("mx-i18n-out"));
+
+          setTimeout(() => {
+            nodes.forEach(el => {
+              const key = el.getAttribute("data-i18n");
+              if (!key) return;
+              const val = dict[key] ?? I18N[DEFAULT_LANG][key];
+              if (typeof val !== "string") return;
+
+              scrambleSmart(el, val, 220, lang);
+
+              el.classList.remove("mx-i18n-out");
+              el.classList.add("mx-i18n-in");
+            });
+
+            setTimeout(() => nodes.forEach(el => el.classList.remove("mx-i18n-in")), 220);
+          }, 160);
+
+        } finally {
+          setTimeout(() => document.body.classList.remove("is-i18n-switching"), 260);
+        }
+      }
+
+      window.__apApplyLang = applyLang;
+      applyLang(getLang());
+
+      (function(){
+        const rail = document.getElementById("lang-rail");
+        if (!rail) return;
+
+        const isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+        const TAP_MOVE_PX = 14;
+        const TAP_SCROLL_PX = 6;
+
+        let startX = 0, startY = 0, startScroll = 0;
+        let dragging = false;
+        let pressedBtn = null;
+
+        function ptFromTouch(t){ return { x: t.clientX, y: t.clientY }; }
+
+        rail.addEventListener("touchstart", (e) => {
+          const targetBtn = e.target && e.target.closest ? e.target.closest(".lang-pill") : null;
+          pressedBtn = targetBtn && rail.contains(targetBtn) ? targetBtn : null;
+
+          if (!e.touches || e.touches.length === 0) return;
+          const p = ptFromTouch(e.touches[0]);
+          startX = p.x;
+          startY = p.y;
+          startScroll = rail.scrollLeft;
+          dragging = false;
+
+          if (pressedBtn) e.preventDefault();
+        }, { passive:false });
+
+        rail.addEventListener("touchmove", (e) => {
+          if (!e.touches || e.touches.length === 0) return;
+          const p = ptFromTouch(e.touches[0]);
+          const dx = Math.abs(p.x - startX);
+          const dy = Math.abs(p.y - startY);
+          const ds = Math.abs(rail.scrollLeft - startScroll);
+          if (dx > TAP_MOVE_PX || dy > TAP_MOVE_PX || ds > TAP_SCROLL_PX) dragging = true;
+        }, { passive:true });
+
+        rail.addEventListener("touchend", (e) => {
+          if (dragging){ pressedBtn = null; return; }
+
+          let btn = pressedBtn;
+          if (!btn){
+            const ct = e.changedTouches && e.changedTouches[0];
+            if (ct){
+              const p = ptFromTouch(ct);
+              const el = document.elementFromPoint(p.x, p.y);
+              const maybe = el && el.closest ? el.closest(".lang-pill") : null;
+              if (maybe && rail.contains(maybe)) btn = maybe;
+            }
+          }
+
+          if (!btn || btn.hidden){ pressedBtn = null; return; }
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const lang = btn.getAttribute("data-lang") || DEFAULT_LANG;
+          setLang(lang);
+          window.__apApplyLang(lang);
+
+          btn.blur();
+          if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+          pressedBtn = null;
+        }, { passive:false });
+
+        rail.addEventListener("touchcancel", () => {
+          dragging = false;
+          pressedBtn = null;
+        }, { passive:true });
+
+        rail.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, true);
+
+        if (!isTouch){
+          let downX = 0, downY = 0;
+          let pDragging = false;
+
+          rail.addEventListener("pointerdown", (e) => {
+            const btn = e.target && e.target.closest ? e.target.closest(".lang-pill") : null;
+            if (btn) e.preventDefault();
+            downX = e.clientX; downY = e.clientY;
+            pDragging = false;
+          }, { passive:false });
+
+          rail.addEventListener("pointermove", (e) => {
+            if (Math.abs(e.clientX - downX) > 10 || Math.abs(e.clientY - downY) > 10) pDragging = true;
+          }, { passive:true });
+
+          rail.addEventListener("pointerup", (e) => {
+            if (pDragging) return;
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const btn = el && el.closest ? el.closest(".lang-pill") : null;
+            if (!btn || !rail.contains(btn) || btn.hidden) return;
+
+            const lang = btn.getAttribute("data-lang") || DEFAULT_LANG;
+            setLang(lang);
+            window.__apApplyLang(lang);
+
+            btn.blur();
+            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+          }, { passive:true });
+        }
+      })();
+
+      (function(){
+        const switchEl = document.getElementById('lang-switch');
+        const railEl   = document.getElementById('lang-rail');
+        if (!switchEl || !railEl) return;
+
+        let openTimer = null;
+        let closeTimer = null;
+        let locked = false;
+
+        const OPEN_DELAY_MS  = 500;
+        const CLOSE_DELAY_MS = 3000;
+
+        let firstOpen = true;
+
+        function clearTimers(){
+          if (openTimer)  { clearTimeout(openTimer);  openTimer = null; }
+          if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+        }
+
+        function ensureStartVisibleOnce(){
+          if (!firstOpen) return;
+          railEl.scrollLeft = 0;
+          firstOpen = false;
+        }
+
+        function resetShift(){
+          railEl.style.setProperty('--rail-shift', '0px');
+        }
+
+        function clampRailIntoViewport(){
+          const vw = window.innerWidth || document.documentElement.clientWidth;
+          const margin = 8;
+
+          resetShift();
+
+          const rect = railEl.getBoundingClientRect();
+          let shift = 0;
+
+          if (rect.left < margin){
+            shift = (margin - rect.left);
+          } else if (rect.right > (vw - margin)){
+            shift = - (rect.right - (vw - margin));
+          }
+
+          if (shift !== 0){
+            railEl.style.setProperty('--rail-shift', `${Math.round(shift)}px`);
+          }
+        }
+
+        function placeRailSmart(){
+          switchEl.classList.remove('open-right');
+          resetShift();
+
+          const vw = window.innerWidth || document.documentElement.clientWidth;
+          const margin = 8;
+
+          let rect = railEl.getBoundingClientRect();
+
+          if (rect.left < -margin){
+            switchEl.classList.add('open-right');
+            rect = railEl.getBoundingClientRect();
+          }
+
+          if (rect.right > vw + margin){
+            switchEl.classList.remove('open-right');
+          }
+
+          clampRailIntoViewport();
+        }
+
+        function openRail(){
+          const y = window.scrollY || document.documentElement.scrollTop || 0;
+          requestAnimationFrame(() => window.scrollTo(0, y));
+
+          switchEl.classList.add('is-open');
+
+          requestAnimationFrame(() => {
+            ensureStartVisibleOnce();
+            placeRailSmart();
+          });
+        }
+
+        function closeRail(){
+          locked = false;
+          switchEl.classList.remove('is-open');
+          switchEl.classList.remove('open-right');
+          resetShift();
+        }
+
+        function scheduleOpen(){
+          clearTimers();
+          openTimer = setTimeout(() => openRail(), OPEN_DELAY_MS);
+        }
+
+        function scheduleClose(){
+          clearTimers();
+          closeTimer = setTimeout(() => closeRail(), CLOSE_DELAY_MS);
+        }
+
+        switchEl.addEventListener('pointerenter', () => {
+          if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+          if (switchEl.classList.contains('is-open')) return;
+          scheduleOpen();
+        });
+
+        switchEl.addEventListener('pointerleave', () => {
+          if (!switchEl.classList.contains('is-open')) { clearTimers(); return; }
+          if (locked) return;
+          scheduleClose();
+        });
+
+        railEl.addEventListener('pointerenter', () => {
+          locked = true;
+          clearTimers();
+          openRail();
+        });
+
+        railEl.addEventListener('pointerleave', () => {
+          locked = false;
+          scheduleClose();
+        });
+
+        const trigger = switchEl.querySelector('.lang-trigger');
+        let _touchHandled = false;
+
+        function toggleRail(){
+          clearTimers();
+          if (switchEl.classList.contains('is-open')) closeRail();
+          else openRail();
+
+          trigger?.blur();
+          if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        }
+
+        trigger?.addEventListener('touchstart', (e) => {
+          _touchHandled = true;
+          e.preventDefault();
+          toggleRail();
+          setTimeout(() => { _touchHandled = false; }, 450);
+        }, { passive: false });
+
+        trigger?.addEventListener('click', (e) => {
+          if (_touchHandled) return;
+          e.preventDefault();
+          toggleRail();
+        });
+
+        window.addEventListener('resize', () => {
+          if (!switchEl.classList.contains('is-open')) return;
+          requestAnimationFrame(() => placeRailSmart());
+        });
+      })();
+    })();
+  </script>
+</body>
+</html>
