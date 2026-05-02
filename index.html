@@ -387,10 +387,10 @@
       filter: blur(0);
     }
 
-    [dir="rtl"] .topbar{ flex-direction:row-reverse; }
-    [dir="rtl"] .right-controls{ margin-left:0; margin-right:auto; flex-direction:row-reverse; }
-    [dir="rtl"] .navlink::after{ transform-origin:right; }
-    [dir="rtl"] .footer-links{ flex-direction:row-reverse; }
+    [dir="rtl"] .topbar{ flex-direction:row; }
+    [dir="rtl"] .right-controls{ margin-left:auto; margin-right:0; flex-direction:row; }
+    [dir="rtl"] .navlink::after{ transform-origin:left; }
+    [dir="rtl"] .footer-links{ flex-direction:row; }
 
     @media (max-width: 720px){
       .topbar{
@@ -804,7 +804,7 @@
         },
 
         ar: {
-          "nav.contact": "تواصل",
+          "nav.contact": "اتصال",
           "footer.terms": "الشروط",
           "footer.privacy": "الخصوصية",
           "footer.cookies": "ملفات تعريف الارتباط",
