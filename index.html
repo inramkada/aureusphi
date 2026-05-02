@@ -60,6 +60,8 @@
 
     header{
       padding:var(--py) var(--px);
+      position:relative;
+      z-index:1000;
     }
 
     .topbar{
@@ -71,6 +73,10 @@
     }
 
     .brand{
+      position:fixed;
+      top:var(--py);
+      left:var(--px);
+      z-index:1001;
       font-weight:200;
       font-size:var(--brand-size);
       letter-spacing:var(--brand-track);
@@ -80,9 +86,23 @@
       white-space:nowrap;
       padding-right:var(--brand-track);
       flex:0 0 auto;
+      direction:ltr;
+      unicode-bidi:isolate;
+      pointer-events:none;
+      -webkit-user-select:none;
+      user-select:none;
+      -webkit-touch-callout:none;
+    }
+
+    .brand::before{
+      content:"AUREUS PHI";
     }
 
     .right-controls{
+      position:fixed;
+      top:calc(var(--py) - 7px);
+      right:var(--px);
+      z-index:1001;
       margin-left:auto;
       display:flex;
       align-items:center;
@@ -449,7 +469,7 @@
   <div class="page">
     <header>
       <div class="topbar">
-        <div class="brand">Aureus Phi</div>
+        <div class="brand" aria-label="AUREUS PHI" role="img"></div>
 
         <div class="right-controls">
           <div class="lang-switch" id="lang-switch">
@@ -1214,5 +1234,17 @@
       })();
     })();
   </script>
+  <script>
+    (function(){
+      const brand = document.querySelector('.brand');
+      if (!brand) return;
+      brand.setAttribute('draggable', 'false');
+      brand.addEventListener('copy', e => e.preventDefault());
+      brand.addEventListener('cut', e => e.preventDefault());
+      brand.addEventListener('contextmenu', e => e.preventDefault());
+      brand.addEventListener('dragstart', e => e.preventDefault());
+    })();
+  </script>
+
 </body>
 </html>
