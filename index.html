@@ -102,13 +102,17 @@
       position:fixed;
       top:calc(var(--py) - 7px);
       right:var(--px);
+      left:auto;
       z-index:1001;
       margin-left:auto;
+      margin-right:0;
       display:flex;
       align-items:center;
       justify-content:flex-end;
       gap:16px;
       flex:0 0 auto;
+      direction:ltr;
+      unicode-bidi:isolate;
     }
 
     .navlink{
@@ -145,6 +149,8 @@
       display:flex;
       align-items:center;
       flex:0 0 auto;
+      direction:ltr;
+      unicode-bidi:isolate;
     }
 
     .lang-trigger{
@@ -214,8 +220,8 @@
     }
 
     [dir="rtl"] .lang-switch.open-right .lang-rail{
-      left:auto;
-      right: calc(100% + 10px);
+      right:auto;
+      left: calc(100% + 10px);
     }
 
     .lang-pill{
@@ -309,10 +315,10 @@
 
     .canvas-wrap{
       position:relative;
-      width:min(78vw, 78vh, 860px);
-      height:min(78vw, 78vh, 860px);
-      min-width:280px;
-      min-height:280px;
+      width:min(90vw, 86svh, 1120px);
+      height:min(90vw, 86svh, 1120px);
+      min-width:300px;
+      min-height:300px;
     }
 
     .canvas-wrap::before{
@@ -505,10 +511,10 @@
       }
 
       .canvas-wrap{
-        width:min(86vw, 70vh, 760px);
-        height:min(86vw, 70vh, 760px);
-        min-width:240px;
-        min-height:240px;
+        width:min(94vw, 78svh, 860px);
+        height:min(94vw, 78svh, 860px);
+        min-width:260px;
+        min-height:260px;
       }
 
       .lang-rail{
@@ -520,8 +526,8 @@
       }
 
       [dir="rtl"] .lang-rail{
-        left:0;
-        right:auto;
+        right:0;
+        left:auto;
       }
     }
 
@@ -537,10 +543,31 @@
       }
 
       .canvas-wrap{
-        width:min(90vw, 62vh, 680px);
-        height:min(90vw, 62vh, 680px);
-        min-width:220px;
-        min-height:220px;
+        width:min(96vw, 72svh, 760px);
+        height:min(96vw, 72svh, 760px);
+        min-width:250px;
+        min-height:250px;
+      }
+    }
+
+    @media (orientation: portrait){
+      .canvas-wrap{
+        width:min(98vw, 78svh, 980px);
+        height:min(98vw, 78svh, 980px);
+      }
+    }
+
+    @media (orientation: landscape) and (max-height: 620px){
+      .canvas-wrap{
+        width:min(82vw, 88svh, 900px);
+        height:min(82vw, 88svh, 900px);
+      }
+    }
+
+    @media (min-width: 1200px) and (min-height: 780px){
+      .canvas-wrap{
+        width:min(84vw, 88svh, 1240px);
+        height:min(84vw, 88svh, 1240px);
       }
     }
 
@@ -631,7 +658,7 @@
       let flat=[], lens=[], totLen=0, spiralLen=0, squares=[];
 
       function rebuildGeometry(){
-        const PAD=W*0.0715;
+        const PAD=W*0.055;
         const RW=W-2*PAD;
         const RH=RW/PHI;
 
@@ -650,7 +677,7 @@
 
         const PHI_IDX=4;
         const rawPhi=rawArcs[PHI_IDX];
-        const TARGET_CR=W*0.1215;
+        const TARGET_CR=W*0.154;
         const scale=TARGET_CR/rawPhi.r;
 
         function tr(ax,ay){
@@ -718,7 +745,7 @@
       function drawRects(al){
         bgCtx.save();
         bgCtx.globalAlpha=al;
-        bgCtx.lineWidth=Math.max(0.45, W*0.0009);
+        bgCtx.lineWidth=Math.max(0.5, W*0.00105);
         squares.forEach((corners,i)=>{
           bgCtx.strokeStyle=G(Math.max(.03,.10-i*.011));
           bgCtx.beginPath();
@@ -743,7 +770,7 @@
 
         ctx.beginPath();
         ctx.strokeStyle=G(spiralAl);
-        ctx.lineWidth=Math.max(1.05, W*0.00205);
+        ctx.lineWidth=Math.max(1.15, W*0.00235);
         let inp=false;
         for(let i=0;i<flat.length;i++){
           if(lens[i]>spiralLen)break;
@@ -765,7 +792,7 @@
         if(phiOver>0){
           ctx.beginPath();
           ctx.strokeStyle=G(phiAl);
-          ctx.lineWidth=Math.max(1.55, W*0.00295);
+          ctx.lineWidth=Math.max(1.8, W*0.00345);
           inp=false;
           for(let i=0;i<flat.length;i++){
             const loc=lens[i]-spiralLen;
