@@ -43,7 +43,7 @@
       transition: opacity 0.18s ease-in-out;
     }
 
-    body.is-i18n-switching{ opacity:.92; }
+    body.is-i18n-switching{ opacity:1; }
 
     .page{
       width:100%;
@@ -405,6 +405,74 @@
       opacity:1;
       transform: translateY(0);
       filter: blur(0);
+    }
+
+    [data-i18n].mx-text-animating{
+      white-space:nowrap;
+    }
+
+    .mx-char{
+      display:inline-block;
+      opacity:.52;
+      transform:translateY(4px) scale(.985);
+      filter:blur(.9px);
+      text-shadow:0 0 8px rgba(201,168,76,.12), 0 0 18px rgba(201,168,76,.06);
+      transition:
+        opacity 320ms cubic-bezier(.22,1,.36,1),
+        transform 420ms cubic-bezier(.22,1,.36,1),
+        filter 360ms ease,
+        text-shadow 420ms ease;
+      will-change:opacity, transform, filter, text-shadow;
+      backface-visibility:hidden;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .mx-char.is-space,
+    .mx-char.is-punct{
+      opacity:1;
+      transform:none;
+      filter:none;
+      text-shadow:none;
+    }
+
+    .mx-char.is-settled{
+      opacity:1;
+      transform:translateY(0) scale(1);
+      filter:blur(0);
+      text-shadow:none;
+    }
+
+    #fg{
+      transform-origin:50% 50%;
+      will-change:transform, filter, opacity;
+      backface-visibility:hidden;
+    }
+
+    .canvas-wrap.is-phi-react #fg{
+      animation: phiReact 920ms cubic-bezier(.22,1,.36,1);
+    }
+
+    @keyframes phiReact{
+      0%{
+        transform:scale(1) rotate(0deg);
+        filter:drop-shadow(0 0 0 rgba(201,168,76,0));
+        opacity:1;
+      }
+      24%{
+        transform:scale(1.012) rotate(.15deg);
+        filter:drop-shadow(0 0 8px rgba(201,168,76,.22)) drop-shadow(0 0 18px rgba(201,168,76,.12));
+        opacity:1;
+      }
+      56%{
+        transform:scale(1.022) rotate(0deg);
+        filter:drop-shadow(0 0 12px rgba(201,168,76,.28)) drop-shadow(0 0 28px rgba(201,168,76,.16));
+        opacity:1;
+      }
+      100%{
+        transform:scale(1) rotate(0deg);
+        filter:drop-shadow(0 0 0 rgba(201,168,76,0));
+        opacity:1;
+      }
     }
 
     [dir="rtl"] .topbar{ flex-direction:row; }
@@ -876,11 +944,11 @@
 
       function setLang(lang){ localStorage.setItem(storageKey, lang); }
 
-      const POOL_LATIN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      const POOL_CYR   = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ0123456789";
-      const POOL_DEV   = "अआइईउऊएऐओऔकखगघचछजझटठडढतथदधनपफबभमयरलवशषसह०१२३४५६७८९";
+      const POOL_LATIN = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const POOL_CYR   = "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЭЮЯ";
+      const POOL_DEV   = "अआइईउऊएऐओऔकखगघचछजझटठडढतथदधनपफबभमयरलवशषसह";
       const POOL_CJK   = "的一是在不了有人这中大为上个国我以要他时来用们生到作地于出就分对成会可主发年动同工也能下过子说产种面而方后多定行学法所民得经";
-      const POOL_AR    = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي٠١٢٣٤٥٦٧٨٩";
+      const POOL_AR    = "ابتثجحخدذرزسشصضطظعغفقكلمنهوي";
 
       function poolForLang(lang){
         if (lang === "ru") return POOL_CYR;
@@ -890,39 +958,96 @@
         return POOL_LATIN;
       }
 
-      function scrambleSmart(el, finalText, durationMs, lang){
+      function isPunctuation(c){
+        return /[\.\,\!\?\:\;\-\—\–\(\)\[\]\/\&\+%#@€$£"'،؛]/.test(c);
+      }
+
+      function randFromPool(pool, fallback){
+        if (!pool || !pool.length) return fallback || "";
+        return pool[(Math.random() * pool.length) | 0];
+      }
+
+      function animatePremiumText(el, finalText, lang){
         const base = String(finalText ?? "");
         const pool = poolForLang(lang);
-        const isArabic = (lang === "ar");
+        const isRTL = RTL_LANGS.has(lang);
 
-        const start = performance.now();
-        const tick = (t) => {
-          const p = Math.min(1, (t - start) / durationMs);
-          const reveal = Math.floor(p * base.length);
+        if (el.__mxTimers){
+          el.__mxTimers.forEach(t => clearTimeout(t));
+        }
+        el.__mxTimers = [];
 
-          if (isArabic){
-            const shown = base.slice(0, reveal);
-            const hidden = base.slice(reveal).replace(/[^\s]/g, " ");
-            el.textContent = shown + hidden;
-            if (p < 1) requestAnimationFrame(tick);
-            else el.textContent = base;
-            return;
+        el.classList.add("mx-text-animating");
+        el.textContent = "";
+
+        const frag = document.createDocumentFragment();
+        const spans = [];
+
+        for (let i = 0; i < base.length; i++){
+          const c = base[i];
+          const span = document.createElement("span");
+          span.className = "mx-char";
+
+          if (/\s/.test(c)){
+            span.classList.add("is-space", "is-settled");
+            span.textContent = c === " " ? "\u00A0" : c;
+          } else if (isPunctuation(c)){
+            span.classList.add("is-punct", "is-settled");
+            span.textContent = c;
+          } else {
+            span.textContent = randFromPool(pool, c);
           }
 
-          let out = "";
-          for (let i = 0; i < base.length; i++){
-            const c = base[i];
-            if (i < reveal) { out += c; continue; }
-            if (c === " ") { out += " "; continue; }
-            if (/[\.\,\!\?\:\;\-\—\–\(\)\[\]\/\&\+%#@€$£"']/.test(c)) { out += c; continue; }
-            out += pool[(Math.random() * pool.length) | 0];
-          }
-          el.textContent = out;
+          frag.appendChild(span);
+          spans.push(span);
+        }
 
-          if (p < 1) requestAnimationFrame(tick);
-          else el.textContent = base;
+        el.appendChild(frag);
+
+        const animIndices = [];
+        spans.forEach((span, idx) => {
+          if (!span.classList.contains("is-space") && !span.classList.contains("is-punct")) animIndices.push(idx);
+        });
+        const ordered = isRTL ? animIndices.slice().reverse() : animIndices.slice();
+
+        requestAnimationFrame(() => {
+          ordered.forEach((idx, orderPos) => {
+            const span = spans[idx];
+            const finalChar = base[idx];
+            const baseDelay = 36 * orderPos;
+
+            const t1 = setTimeout(() => {
+              span.textContent = randFromPool(pool, finalChar);
+            }, baseDelay);
+
+            const t2 = setTimeout(() => {
+              span.textContent = finalChar;
+              span.classList.add("is-settled");
+            }, baseDelay + 88);
+
+            el.__mxTimers.push(t1, t2);
+          });
+
+          const cleanup = setTimeout(() => {
+            el.classList.remove("mx-text-animating");
+          }, (ordered.length * 36) + 380);
+
+          el.__mxTimers.push(cleanup);
+        });
+      }
+
+      function triggerPhiReaction(){
+        const wrap = document.getElementById("wrap");
+        if (!wrap) return;
+        wrap.classList.remove("is-phi-react");
+        void wrap.offsetWidth;
+        wrap.classList.add("is-phi-react");
+        const clear = () => {
+          wrap.classList.remove("is-phi-react");
+          wrap.removeEventListener("animationend", clear, true);
         };
-        requestAnimationFrame(tick);
+        wrap.addEventListener("animationend", clear, true);
+        setTimeout(clear, 1100);
       }
 
       function applyLang(lang){
@@ -957,17 +1082,18 @@
               const val = dict[key] ?? I18N[DEFAULT_LANG][key];
               if (typeof val !== "string") return;
 
-              scrambleSmart(el, val, 220, lang);
+              animatePremiumText(el, val, lang);
 
               el.classList.remove("mx-i18n-out");
               el.classList.add("mx-i18n-in");
             });
 
-            setTimeout(() => nodes.forEach(el => el.classList.remove("mx-i18n-in")), 220);
+            triggerPhiReaction();
+            setTimeout(() => nodes.forEach(el => el.classList.remove("mx-i18n-in")), 520);
           }, 160);
 
         } finally {
-          setTimeout(() => document.body.classList.remove("is-i18n-switching"), 260);
+          setTimeout(() => document.body.classList.remove("is-i18n-switching"), 520);
         }
       }
 
