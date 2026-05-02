@@ -639,317 +639,316 @@
     </footer>
   </div>
 
+  <script src="https://unpkg.com/three@0.161.0/build/three.min.js"></script>
   <script>
     (function(){
       const canvas = document.getElementById('phi-gl');
       const wrap = document.getElementById('wrap');
+      if (!canvas || !wrap) return;
 
-      const PHI = 1.6180339887;
-      const GOLD = [201 / 255, 168 / 255, 76 / 255];
-
-      const gl = canvas.getContext('webgl', {
-        alpha:true,
-        antialias:true,
-        premultipliedAlpha:true,
-        preserveDrawingBuffer:false,
-        powerPreference:'high-performance'
-      });
-
-      if (!gl){
+      function fallback2D(){
         const ctx = canvas.getContext('2d');
-        let W=560,H=560,dpr=1;
+        if (!ctx) return;
+        let W = 560, H = 560, dpr = 1;
 
-        function resize2d(){
-          const rect=wrap.getBoundingClientRect();
-          dpr=Math.min(window.devicePixelRatio||1,2);
-          W=Math.max(220,Math.round(rect.width));
-          H=Math.max(220,Math.round(rect.height));
-          canvas.width=Math.round(W*dpr);
-          canvas.height=Math.round(H*dpr);
-          canvas.style.width=W+'px';
-          canvas.style.height=H+'px';
-          ctx.setTransform(dpr,0,0,dpr,0,0);
+        function resize(){
+          const rect = wrap.getBoundingClientRect();
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+          W = Math.max(220, Math.round(rect.width));
+          H = Math.max(220, Math.round(rect.height));
+          canvas.width = Math.round(W * dpr);
+          canvas.height = Math.round(H * dpr);
+          canvas.style.width = W + 'px';
+          canvas.style.height = H + 'px';
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
 
-        function drawFallback(){
-          ctx.clearRect(0,0,W,H);
+        function draw(){
+          const r = Math.min(W, H) * 0.19;
+          const ext = r * 0.72;
+          ctx.clearRect(0, 0, W, H);
           ctx.save();
-          ctx.translate(W/2,H/2);
-          ctx.strokeStyle='rgba(201,168,76,.95)';
-          ctx.lineWidth=Math.max(1.8,W*.00345);
-          ctx.lineCap='round';
-          ctx.lineJoin='round';
-          const r=W*.154;
+          ctx.translate(W / 2, H / 2);
+          ctx.strokeStyle = 'rgba(201,168,76,.96)';
+          ctx.lineWidth = Math.max(1.7, Math.min(W, H) * 0.0032);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.shadowColor = 'rgba(201,168,76,.24)';
+          ctx.shadowBlur = Math.max(8, r * 0.18);
           ctx.beginPath();
-          ctx.arc(0,0,r,0,Math.PI*2);
-          ctx.moveTo(0,-r*1.7);
-          ctx.lineTo(0,r*1.7);
+          ctx.arc(0, 0, r, 0, Math.PI * 2);
+          ctx.moveTo(0, -r - ext);
+          ctx.lineTo(0, r + ext);
           ctx.stroke();
           ctx.restore();
         }
 
-        resize2d();
-        drawFallback();
-        window.addEventListener('resize',()=>{resize2d();drawFallback();});
+        resize();
+        draw();
+        let timer = null;
+        window.addEventListener('resize', () => {
+          clearTimeout(timer);
+          timer = setTimeout(() => { resize(); draw(); }, 120);
+        });
+      }
+
+      if (!window.THREE){
+        fallback2D();
         return;
       }
 
-      const DPR_MAX = 2;
-      let W = 560, H = 560, dpr = 1;
-      let startTime = performance.now();
-      let drawProgress = 0;
+      const THREE = window.THREE;
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.setClearColor(0x000000, 0);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.028);
+
+      const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 80);
+      camera.position.set(0, 0, 7.8);
+      scene.add(camera);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 1.45);
+      scene.add(ambient);
+
+      const mainLight = new THREE.PointLight(0xffe4b0, 20, 40, 2);
+      mainLight.position.set(0, 0, 5.6);
+      scene.add(mainLight);
+
+      const rimLight = new THREE.PointLight(0xc9a84c, 12, 35, 2);
+      rimLight.position.set(0, 0, 2.2);
+      scene.add(rimLight);
+
+      const phiRoot = new THREE.Group();
+      scene.add(phiRoot);
+
+      const leftPivot = new THREE.Group();
+      const rightPivot = new THREE.Group();
+      phiRoot.add(leftPivot, rightPivot);
+
+      const goldMat = new THREE.MeshPhysicalMaterial({
+        color: 0xc9a84c,
+        emissive: 0x47320b,
+        emissiveIntensity: 1.35,
+        metalness: 0.82,
+        roughness: 0.22,
+        clearcoat: 1,
+        clearcoatRoughness: 0.12,
+        transparent: true,
+        opacity: 0.98
+      });
+
+      const stemMat = goldMat.clone();
+      stemMat.emissiveIntensity = 1.2;
+
+      const arcRadius = 1.28;
+      const tubeRadius = 0.047;
+      const stemHeight = arcRadius * 3.42;
+
+      function arcPoints(a0, a1, segments){
+        const pts = [];
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const a = a0 + (a1 - a0) * t;
+          pts.push(new THREE.Vector3(Math.cos(a) * arcRadius, Math.sin(a) * arcRadius, 0));
+        }
+        return pts;
+      }
+
+      function makeTube(points, radialSegs = 18){
+        const curve = new THREE.CatmullRomCurve3(points);
+        return new THREE.TubeGeometry(curve, Math.max(120, points.length * 2), tubeRadius, radialSegs, false);
+      }
+
+      const leftArc = new THREE.Mesh(makeTube(arcPoints(Math.PI / 2, Math.PI * 1.5, 80)), goldMat);
+      const rightArc = new THREE.Mesh(makeTube(arcPoints(-Math.PI / 2, Math.PI / 2, 80)), goldMat.clone());
+      leftPivot.add(leftArc);
+      rightPivot.add(rightArc);
+
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(tubeRadius * 0.9, tubeRadius * 0.9, stemHeight, 18, 1, false),
+        stemMat
+      );
+      stem.position.z = 0.006;
+      phiRoot.add(stem);
+
+      const innerGlow = new THREE.Mesh(
+        new THREE.RingGeometry(arcRadius * 0.94, arcRadius * 1.18, 96),
+        new THREE.MeshBasicMaterial({
+          color: 0xc9a84c,
+          transparent: true,
+          opacity: 0.068,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      innerGlow.position.z = -0.14;
+      phiRoot.add(innerGlow);
+
+      const coreGlow = new THREE.Mesh(
+        new THREE.CircleGeometry(arcRadius * 0.88, 96),
+        new THREE.MeshBasicMaterial({
+          color: 0xc9a84c,
+          transparent: true,
+          opacity: 0.034,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
+      );
+      coreGlow.position.z = -0.18;
+      phiRoot.add(coreGlow);
+
+      const dustCount = 1400;
+      const dustPositions = new Float32Array(dustCount * 3);
+      const dustBase = new Float32Array(dustCount * 3);
+      const dustVel = new Float32Array(dustCount * 3);
+      const dustPhase = new Float32Array(dustCount);
+
+      for (let i = 0; i < dustCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 1.25 + Math.pow(Math.random(), 0.55) * 2.8;
+        const z = (Math.random() - 0.5) * 2.3;
+        const yBias = (Math.random() - 0.5) * 1.2;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius * 0.82 + yBias * 0.22;
+        const index = i * 3;
+        dustBase[index] = x;
+        dustBase[index + 1] = y;
+        dustBase[index + 2] = z;
+
+        const dir = new THREE.Vector3(x * 0.95, y * 0.95, z * 0.35 + 0.45).normalize();
+        const speed = 0.8 + Math.random() * 2.4;
+        dustVel[index] = dir.x * speed;
+        dustVel[index + 1] = dir.y * speed;
+        dustVel[index + 2] = -(1.8 + Math.random() * 4.8);
+        dustPhase[i] = Math.random() * Math.PI * 2;
+      }
+
+      const dustGeom = new THREE.BufferGeometry();
+      dustGeom.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+
+      const dustMat = new THREE.PointsMaterial({
+        color: 0xe8c876,
+        size: 0.024,
+        transparent: true,
+        opacity: 0.88,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+      });
+
+      const dust = new THREE.Points(dustGeom, dustMat);
+      scene.add(dust);
+
+      const starsCount = 720;
+      const starsPos = new Float32Array(starsCount * 3);
+      const starBase = new Float32Array(starsCount * 3);
+      const starSpeed = new Float32Array(starsCount);
+
+      for (let i = 0; i < starsCount; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const rad = 2.2 + Math.random() * 7.4;
+        const x = Math.cos(ang) * rad;
+        const y = Math.sin(ang) * rad * (0.6 + Math.random() * 0.5);
+        const z = -Math.random() * 16;
+        const idx = i * 3;
+        starBase[idx] = x;
+        starBase[idx + 1] = y;
+        starBase[idx + 2] = z;
+        starSpeed[i] = 0.5 + Math.random() * 2.2;
+      }
+
+      const starsGeom = new THREE.BufferGeometry();
+      starsGeom.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
+      const starsMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.0135,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+      });
+      const stars = new THREE.Points(starsGeom, starsMat);
+      scene.add(stars);
+
+      let W = 560;
+      let H = 560;
+      let progress = 0;
       let targetProgress = 0;
-      let vertices = new Float32Array();
-      let meta = new Float32Array();
-      let vertexCount = 0;
+      let pulse = 0;
+      let lastTouchY = null;
       let rafId = null;
       let visible = true;
-
-      function compile(type, source){
-        const sh = gl.createShader(type);
-        gl.shaderSource(sh, source);
-        gl.compileShader(sh);
-        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)){
-          throw new Error(gl.getShaderInfoLog(sh) || 'Shader compile error');
-        }
-        return sh;
-      }
-
-      function program(vs, fs){
-        const p = gl.createProgram();
-        gl.attachShader(p, compile(gl.VERTEX_SHADER, vs));
-        gl.attachShader(p, compile(gl.FRAGMENT_SHADER, fs));
-        gl.linkProgram(p);
-        if (!gl.getProgramParameter(p, gl.LINK_STATUS)){
-          throw new Error(gl.getProgramInfoLog(p) || 'Program link error');
-        }
-        return p;
-      }
-
-      const vs = `
-        attribute vec2 a_pos;
-        attribute float a_line;
-        uniform vec2 u_resolution;
-        uniform float u_pxRatio;
-        uniform float u_progress;
-        uniform float u_time;
-        varying float v_line;
-        varying float v_reveal;
-        varying float v_alpha;
-
-        void main(){
-          vec2 zeroToOne = a_pos / u_resolution;
-          vec2 clip = zeroToOne * 2.0 - 1.0;
-          clip.y = -clip.y;
-
-          float breathe = 1.0 + 0.0035 * sin(u_time * 1.35);
-          clip *= breathe;
-
-          gl_Position = vec4(clip, 0.0, 1.0);
-          gl_PointSize = mix(2.0, 4.4, a_line) * u_pxRatio;
-
-          v_line = a_line;
-          v_reveal = smoothstep(a_line - 0.018, a_line + 0.035, u_progress);
-          v_alpha = v_reveal;
-        }
-      `;
-
-      const fs = `
-        precision mediump float;
-        uniform vec3 u_gold;
-        uniform float u_time;
-        varying float v_line;
-        varying float v_alpha;
-
-        void main(){
-          vec2 uv = gl_PointCoord.xy - 0.5;
-          float d = length(uv);
-          float core = smoothstep(0.50, 0.18, d);
-          float halo = smoothstep(0.50, 0.02, d) * 0.25;
-
-          float shimmer = 0.86 + 0.14 * sin(u_time * 2.1 + v_line * 18.0);
-          vec3 col = u_gold * shimmer + vec3(1.0, .92, .70) * 0.10;
-          float alpha = (core + halo) * v_alpha;
-
-          gl_FragColor = vec4(col, alpha);
-        }
-      `;
-
-      const p = program(vs, fs);
-      const loc = {
-        pos: gl.getAttribLocation(p, 'a_pos'),
-        line: gl.getAttribLocation(p, 'a_line'),
-        resolution: gl.getUniformLocation(p, 'u_resolution'),
-        pxRatio: gl.getUniformLocation(p, 'u_pxRatio'),
-        progress: gl.getUniformLocation(p, 'u_progress'),
-        time: gl.getUniformLocation(p, 'u_time'),
-        gold: gl.getUniformLocation(p, 'u_gold')
-      };
-
-      const posBuffer = gl.createBuffer();
-      const metaBuffer = gl.createBuffer();
-
-      function pc(e,a,b){
-        return Math.max(0,Math.min(1,(e-a)/(b-a)));
-      }
-
-      function ei(t){
-        return t < .5 ? 2*t*t : -1+(4-2*t)*t;
-      }
-
-      function buildGeometry(){
-        const PAD = W * 0.055;
-        const RW = W - 2 * PAD;
-        const RH = RW / PHI;
-
-        let rx = PAD, ry = (H - RH) / 2, rw = RW, rh = RH;
-        const rawArcs = [];
-
-        for (let i=0;i<8;i++){
-          const d=i%4; let sq, ax, ay, sa;
-          if (d===0){ sq=rh; ax=rx+sq; ay=ry+sq; sa=Math.PI; rx+=sq; rw-=sq; }
-          else if (d===1){ sq=rw; ax=rx; ay=ry+sq; sa=-Math.PI/2; ry+=sq; rh-=sq; }
-          else if (d===2){ sq=rh; ax=rx+rw-sq; ay=ry; sa=0; rw-=sq; }
-          else { sq=rw; ax=rx+rw; ay=ry+rh-sq; sa=Math.PI/2; rh-=sq; }
-          rawArcs.push({ax,ay,r:sq,sa});
-          if (rw<1 || rh<1) break;
-        }
-
-        const PHI_IDX = 4;
-        const rawPhi = rawArcs[PHI_IDX];
-        const TARGET_CR = W * 0.154;
-        const scale = TARGET_CR / rawPhi.r;
-
-        function tr(ax,ay){
-          return { x:(ax-rawPhi.ax)*scale + W/2, y:(ay-rawPhi.ay)*scale + H/2 };
-        }
-
-        const arcs = rawArcs.map(({ax,ay,r,sa})=>{
-          const t = tr(ax,ay);
-          return { ax:t.x, ay:t.y, r:r*scale, sa };
-        });
-
-        const phiArc = arcs[PHI_IDX];
-        const CX = phiArc.ax, CY = phiArc.ay, CR = phiArc.r;
-
-        const pts = [];
-        const lineValues = [];
-
-        function addPoint(x,y,lineValue){
-          pts.push(x,y);
-          lineValues.push(lineValue);
-        }
-
-        let totalRaw = 0;
-        const all = [];
-
-        for (let i=0;i<=PHI_IDX;i++){
-          const {ax,ay,r,sa}=arcs[i];
-          const steps=Math.max(28,Math.floor(r*1.35));
-          for(let j=(i===0?0:1);j<=steps;j++){
-            const a=sa+(Math.PI/2)*(j/steps);
-            all.push({x:ax+r*Math.cos(a), y:ay+r*Math.sin(a), lift:false});
-          }
-        }
-
-        const circleStartA=phiArc.sa+Math.PI/2;
-        for(let i=1;i<=320;i++){
-          const a=circleStartA+(Math.PI*2)*(i/320);
-          all.push({x:CX+CR*Math.cos(a), y:CY+CR*Math.sin(a), lift:false});
-        }
-
-        const EXT=CR*0.7;
-        all.push({x:CX, y:CY-CR-EXT, lift:true});
-        for(let i=1;i<=120;i++){
-          all.push({x:CX, y:(CY-CR-EXT)+(CR*2+EXT*2)*(i/120), lift:false});
-        }
-
-        const lengths = [0];
-        for (let i=1;i<all.length;i++){
-          const d = all[i].lift ? 0 : Math.hypot(all[i].x-all[i-1].x, all[i].y-all[i-1].y);
-          lengths.push(lengths[i-1]+d);
-        }
-        totalRaw = lengths[lengths.length-1] || 1;
-
-        for (let i=0;i<all.length;i++){
-          addPoint(all[i].x, all[i].y, lengths[i]/totalRaw);
-        }
-
-        vertices = new Float32Array(pts);
-        meta = new Float32Array(lineValues);
-        vertexCount = lineValues.length;
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, metaBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, meta, gl.STATIC_DRAW);
-      }
+      const clock = new THREE.Clock();
 
       function resize(){
         const rect = wrap.getBoundingClientRect();
-        dpr = Math.min(window.devicePixelRatio || 1, DPR_MAX);
-
         W = Math.max(220, Math.round(rect.width));
         H = Math.max(220, Math.round(rect.height));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(W, H, false);
+        camera.aspect = W / H;
+        camera.updateProjectionMatrix();
 
-        canvas.width = Math.round(W * dpr);
-        canvas.height = Math.round(H * dpr);
-        canvas.style.width = W + 'px';
-        canvas.style.height = H + 'px';
-
-        gl.viewport(0,0,canvas.width,canvas.height);
-        buildGeometry();
-        startTime = performance.now();
-        drawProgress = 0;
-        targetProgress = 1;
+        const aspect = W / H;
+        const scale = aspect < 0.78 ? 1.16 : (aspect > 1.55 ? 0.95 : 1.05);
+        phiRoot.scale.setScalar(scale);
+        dustMat.size = aspect < 0.78 ? 0.027 : 0.024;
       }
 
-      function draw(now){
-        if (!visible) return;
+      function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 
-        const t = (now - startTime) / 1000;
-        const intro = ei(pc((now - startTime), 280, 2800));
-        targetProgress = Math.max(targetProgress, intro);
-        drawProgress += (targetProgress - drawProgress) * 0.055;
-
-        gl.clearColor(0,0,0,0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-        gl.useProgram(p);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
-        gl.enableVertexAttribArray(loc.pos);
-        gl.vertexAttribPointer(loc.pos, 2, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, metaBuffer);
-        gl.enableVertexAttribArray(loc.line);
-        gl.vertexAttribPointer(loc.line, 1, gl.FLOAT, false, 0, 0);
-
-        gl.uniform2f(loc.resolution, W, H);
-        gl.uniform1f(loc.pxRatio, dpr);
-        gl.uniform1f(loc.progress, drawProgress);
-        gl.uniform1f(loc.time, t);
-        gl.uniform3f(loc.gold, GOLD[0], GOLD[1], GOLD[2]);
-
-        gl.drawArrays(gl.POINTS, 0, vertexCount);
-
-        rafId = requestAnimationFrame(draw);
+      function onWheel(e){
+        e.preventDefault();
+        const delta = Math.sign(e.deltaY || 0);
+        targetProgress = clamp01(targetProgress + delta * 0.11);
+        pulse = 1;
       }
 
-      let resizeTimer=null;
-      window.addEventListener('resize',()=>{
-        clearTimeout(resizeTimer);
-        resizeTimer=setTimeout(resize,120);
-      });
+      function onTouchStart(e){
+        if (!e.touches || !e.touches.length) return;
+        lastTouchY = e.touches[0].clientY;
+      }
 
-      document.addEventListener('visibilitychange',()=>{
+      function onTouchMove(e){
+        if (!e.touches || !e.touches.length || lastTouchY == null) return;
+        const y = e.touches[0].clientY;
+        const dy = lastTouchY - y;
+        if (Math.abs(dy) > 5){
+          targetProgress = clamp01(targetProgress + dy * 0.0018);
+          pulse = 1;
+          lastTouchY = y;
+          e.preventDefault();
+        }
+      }
+
+      function onTouchEnd(){
+        lastTouchY = null;
+      }
+
+      window.addEventListener('wheel', onWheel, { passive: false });
+      window.addEventListener('touchstart', onTouchStart, { passive: true });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd, { passive: true });
+
+      window.__phiBoost = function(){
+        pulse = 1;
+        targetProgress = clamp01(targetProgress + 0.04);
+      };
+
+      document.addEventListener('visibilitychange', () => {
         visible = !document.hidden;
         if (visible && !rafId){
-          startTime = performance.now() - 3000;
-          rafId = requestAnimationFrame(draw);
+          clock.start();
+          rafId = requestAnimationFrame(animate);
         }
         if (!visible && rafId){
           cancelAnimationFrame(rafId);
@@ -957,13 +956,90 @@
         }
       });
 
-      window.__phiBoost = function(){
-        targetProgress = 1;
-        drawProgress = Math.max(drawProgress, .94);
-      };
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 120);
+      });
+
+      function animate(){
+        if (!visible) return;
+        rafId = requestAnimationFrame(animate);
+
+        const t = clock.getElapsedTime();
+        progress += (targetProgress - progress) * 0.065;
+        pulse += (0 - pulse) * 0.08;
+
+        const openEase = 1 - Math.pow(1 - progress, 2.35);
+        const pulseAmt = pulse * 0.08 + Math.sin(t * 1.2) * 0.008;
+
+        leftPivot.position.x = -openEase * 0.74;
+        rightPivot.position.x = openEase * 0.74;
+        leftPivot.rotation.y = openEase * 1.12;
+        rightPivot.rotation.y = -openEase * 1.12;
+        leftPivot.rotation.z = openEase * 0.08;
+        rightPivot.rotation.z = -openEase * 0.08;
+
+        stem.scale.y = 1 + openEase * 0.08;
+        stem.material.opacity = 0.98 - openEase * 0.16;
+
+        phiRoot.rotation.y += (openEase * 0.24 - phiRoot.rotation.y) * 0.06;
+        phiRoot.rotation.x += ((-0.05 + openEase * 0.14) - phiRoot.rotation.x) * 0.05;
+        phiRoot.rotation.z += ((pulseAmt * 0.35) - phiRoot.rotation.z) * 0.08;
+        phiRoot.position.z = -openEase * 0.55;
+
+        camera.position.z += ((7.8 - openEase * 4.55) - camera.position.z) * 0.055;
+        camera.position.x += (Math.sin(t * 0.35) * 0.045 * openEase - camera.position.x) * 0.04;
+        camera.lookAt(0, 0, 0);
+
+        mainLight.intensity = 20 + openEase * 11 + pulse * 4;
+        rimLight.intensity = 12 + openEase * 10 + pulse * 3;
+        innerGlow.material.opacity = 0.068 + openEase * 0.09 + pulse * 0.05;
+        innerGlow.scale.setScalar(1 + openEase * 0.16 + pulse * 0.08);
+        coreGlow.material.opacity = 0.034 + openEase * 0.055 + pulse * 0.03;
+        coreGlow.scale.setScalar(1 + openEase * 0.38 + pulse * 0.18);
+
+        leftArc.material.emissiveIntensity = 1.35 + openEase * 0.65 + pulse * 0.5;
+        rightArc.material.emissiveIntensity = 1.35 + openEase * 0.65 + pulse * 0.5;
+        stemMat.emissiveIntensity = 1.2 + openEase * 0.45 + pulse * 0.35;
+
+        for (let i = 0; i < dustCount; i++) {
+          const idx = i * 3;
+          const baseX = dustBase[idx];
+          const baseY = dustBase[idx + 1];
+          const baseZ = dustBase[idx + 2];
+          const px = dustVel[idx];
+          const py = dustVel[idx + 1];
+          const pz = dustVel[idx + 2];
+          const phase = dustPhase[i];
+          const wave = Math.sin(t * 1.4 + phase) * 0.04;
+          const burst = Math.pow(openEase, 1.6);
+
+          dustPositions[idx] = baseX + px * burst + Math.cos(phase + t * 0.55) * (0.04 + burst * 0.12) + wave;
+          dustPositions[idx + 1] = baseY + py * burst + Math.sin(phase * 1.3 + t * 0.7) * (0.04 + burst * 0.12) - wave;
+          dustPositions[idx + 2] = baseZ + pz * burst - burst * 0.9;
+        }
+        dustGeom.attributes.position.needsUpdate = true;
+        dust.rotation.z = t * 0.035;
+        dust.rotation.y = t * 0.06;
+        dustMat.opacity = 0.84 + openEase * 0.12;
+
+        for (let i = 0; i < starsCount; i++) {
+          const idx = i * 3;
+          const travel = (t * (0.15 + starSpeed[i] * 0.055) + openEase * starSpeed[i] * 1.7) % 18;
+          starsPos[idx] = starBase[idx];
+          starsPos[idx + 1] = starBase[idx + 1];
+          starsPos[idx + 2] = starBase[idx + 2] + travel;
+        }
+        starsGeom.attributes.position.needsUpdate = true;
+        starsMat.opacity = 0.2 + openEase * 0.36;
+
+        renderer.render(scene, camera);
+      }
 
       resize();
-      rafId = requestAnimationFrame(draw);
+      clock.start();
+      rafId = requestAnimationFrame(animate);
     })();
 
     (function(){
@@ -1341,7 +1417,7 @@
         let closeTimer = null;
         let locked = false;
 
-        const OPEN_DELAY_MS  = 500;
+        const OPEN_DELAY_MS  = 120;
         const CLOSE_DELAY_MS = 3000;
 
         let firstOpen = true;
