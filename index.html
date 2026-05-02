@@ -19,10 +19,10 @@
       --muted:rgba(255,255,255,.62);
       --px:clamp(16px, 2vw, 26px);
       --py:clamp(10px, 1.4vh, 16px);
-      --brand-size:clamp(10.5px, .78vw, 12px);
-      --brand-track:.34em;
-      --nav-size:clamp(10.5px, .78vw, 12px);
-      --nav-track:.34em;
+      --brand-size:clamp(13px, 1vw, 15px);
+      --brand-track:.56em;
+      --nav-size:clamp(10px, .8vw, 11px);
+      --nav-track:.30em;
       --copy-size:clamp(6px, .62vw, 8px);
       --copy-track:.08em;
     }
@@ -77,12 +77,12 @@
       top:var(--py);
       left:var(--px);
       z-index:1001;
-      font-weight:300;
+      font-weight:200;
       font-size:var(--brand-size);
       letter-spacing:var(--brand-track);
       text-transform:uppercase;
       line-height:1;
-      color:rgba(255,255,255,.74);
+      color:rgba(255,255,255,.86);
       white-space:nowrap;
       padding-right:var(--brand-track);
       flex:0 0 auto;
@@ -109,17 +109,17 @@
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      gap:14px;
+      gap:16px;
       flex:0 0 auto;
       direction:ltr;
       unicode-bidi:isolate;
     }
 
     .navlink{
-      color:rgba(255,255,255,.74);
+      color:rgba(255,255,255,.68);
       text-decoration:none;
       font-size:var(--nav-size);
-      font-weight:300;
+      font-weight:200;
       letter-spacing:var(--nav-track);
       text-transform:uppercase;
       line-height:1;
@@ -535,11 +535,11 @@
       .footer-links .sep{ display:none; }
 
       .brand{
-        font-size:var(--brand-size);
+        font-size:clamp(11px, 3vw, 13px);
       }
 
       .navlink{
-        font-size:var(--nav-size);
+        font-size:10px;
       }
 
       .canvas-wrap{
@@ -573,87 +573,9 @@
 
     html[dir="rtl"], body{ overflow-x: hidden; }
     [dir="rtl"] .page{ overflow-x: clip; }
-
-
-    .brand,
-    .navlink,
-    .lang-trigger{
-      mix-blend-mode:difference;
-      isolation:auto;
-    }
-
-    .phi-flash{
-      position:fixed;
-      inset:-28vmax;
-      z-index:900;
-      pointer-events:none;
-      opacity:0;
-      transform:translate3d(-140vw,0,0) rotate(-16deg);
-      transform-origin:50% 50%;
-      mix-blend-mode:screen;
-      filter:blur(.15px);
-    }
-
-    .phi-flash::before{
-      content:"";
-      position:absolute;
-      top:50%;
-      left:50%;
-      width:190vmax;
-      height:clamp(1px,.16vw,3px);
-      transform:translate(-50%,-50%);
-      background:linear-gradient(90deg,
-        transparent 0%,
-        rgba(255,255,255,0) 38%,
-        rgba(255,255,255,.78) 48%,
-        rgba(201,168,76,.95) 50%,
-        rgba(255,255,255,.82) 52%,
-        rgba(255,255,255,0) 62%,
-        transparent 100%
-      );
-      box-shadow:
-        0 0 10px rgba(255,255,255,.30),
-        0 0 22px rgba(201,168,76,.28),
-        0 0 48px rgba(201,168,76,.12);
-    }
-
-    .phi-flash::after{
-      content:"";
-      position:absolute;
-      top:50%;
-      left:50%;
-      width:190vmax;
-      height:clamp(18px,3vw,42px);
-      transform:translate(-50%,-50%);
-      background:linear-gradient(90deg,
-        transparent 0%,
-        rgba(255,255,255,0) 42%,
-        rgba(201,168,76,.10) 50%,
-        rgba(255,255,255,0) 58%,
-        transparent 100%
-      );
-      filter:blur(12px);
-    }
-
-    .phi-flash.is-sweeping{
-      animation:phiFlashSweep 1.18s cubic-bezier(.16,1,.3,1) forwards;
-    }
-
-    @keyframes phiFlashSweep{
-      0%{ opacity:0; transform:translate3d(-140vw,0,0) rotate(-16deg); }
-      12%{ opacity:1; }
-      58%{ opacity:1; }
-      100%{ opacity:0; transform:translate3d(140vw,0,0) rotate(-16deg); }
-    }
-
-    @media (prefers-reduced-motion: reduce){
-      .phi-flash.is-sweeping{ animation:none; opacity:0; }
-    }
-
   </style>
 </head>
 <body>
-  <div class="phi-flash" id="phi-flash" aria-hidden="true"></div>
   <div class="page">
     <header>
       <div class="topbar">
@@ -1489,32 +1411,6 @@
       brand.addEventListener('cut', e => e.preventDefault());
       brand.addEventListener('contextmenu', e => e.preventDefault());
       brand.addEventListener('dragstart', e => e.preventDefault());
-    })();
-  </script>
-
-
-  <script>
-    (function(){
-      const flash = document.getElementById('phi-flash');
-      if(!flash) return;
-
-      let locked = false;
-      function sweep(){
-        if(locked) return;
-        locked = true;
-        flash.classList.remove('is-sweeping');
-        void flash.offsetWidth;
-        flash.classList.add('is-sweeping');
-        window.setTimeout(()=>{
-          flash.classList.remove('is-sweeping');
-          locked = false;
-        }, 1250);
-      }
-
-      window.setTimeout(sweep, 4200);
-      window.addEventListener('pointerdown', sweep, {passive:true});
-      window.addEventListener('wheel', sweep, {passive:true});
-      window.addEventListener('touchmove', sweep, {passive:true});
     })();
   </script>
 
